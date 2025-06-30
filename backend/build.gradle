@@ -10,7 +10,7 @@ repositories {
 
 dependencies {
     // Use JUnit test framework.
-    testImplementation libs.junit
+    testImplementation libs.junit.jupiter
 
     implementation 'dev.langchain4j:langchain4j-open-ai:1.0.1'
     implementation 'dev.langchain4j:langchain4j:1.0.1'
@@ -50,7 +50,7 @@ dependencies {
 // Apply a specific Java toolchain to ease working on different environments.
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(24)
     }
 }
 
