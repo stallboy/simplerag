@@ -1,0 +1,64 @@
+plugins {
+    // Apply the application plugin to add support for building a CLI application in Java.
+    id 'application'
+}
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+}
+
+dependencies {
+    // Use JUnit test framework.
+    testImplementation libs.junit
+
+    implementation 'dev.langchain4j:langchain4j-open-ai:1.0.1'
+    implementation 'dev.langchain4j:langchain4j:1.0.1'
+    // https://mvnrepository.com/artifact/io.weaviate/client
+    implementation 'io.weaviate:client:5.2.1'
+    implementation 'org.json:json:20250517'
+
+    // https://mvnrepository.com/artifact/org.neo4j.driver/neo4j-java-driver
+    // https://neo4j.com/docs/java-manual/current/
+    implementation 'org.neo4j.driver:neo4j-java-driver:5.28.5'
+    // https://neo4j.com/docs/ogm-manual/current/reference/#reference:getting-started
+    implementation  'org.neo4j:neo4j-ogm-core:4.0.18'
+    implementation  'org.neo4j:neo4j-ogm-bolt-driver:4.0.18'
+
+
+    // https://mvnrepository.com/artifact/dev.langchain4j/langchain4j-community-neo4j
+    implementation 'dev.langchain4j:langchain4j-community-neo4j:1.1.0-beta7'
+    // https://mvnrepository.com/artifact/dev.langchain4j/langchain4j-community-neo4j-retriever
+    implementation 'dev.langchain4j:langchain4j-community-neo4j-retriever:1.1.0-beta7'
+
+    // https://javalin.io/documentation#getting-started
+    implementation("io.javalin:javalin:6.7.0")
+
+
+    // https://mvnrepository.com/artifact/org.commonmark/commonmark
+    implementation 'org.commonmark:commonmark:0.25.0'
+
+    // https://mvnrepository.com/artifact/ai.djl.huggingface/tokenizers
+    implementation 'ai.djl.huggingface:tokenizers:0.33.0'
+
+    implementation 'io.github.cdimascio:dotenv-java:3.2.0'
+
+    implementation 'org.slf4j:slf4j-simple:2.0.9'
+
+}
+
+// Apply a specific Java toolchain to ease working on different environments.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+application {
+    // Define the main class for the application.
+    mainClass = 'test.App'
+}
+
+
+
+
