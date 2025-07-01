@@ -1,20 +1,44 @@
-package simplerag;
+package simplerag.service;
 
+import io.weaviate.client.v1.data.model.WeaviateObject;
 import io.weaviate.client.v1.misc.model.BM25Config;
 import io.weaviate.client.v1.misc.model.InvertedIndexConfig;
 import io.weaviate.client.v1.schema.model.DataType;
 import io.weaviate.client.v1.schema.model.Property;
 import io.weaviate.client.v1.schema.model.WeaviateClass;
-import simplerag.model.Doc;
+import simplerag.data.Doc;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public record Chunk(
-        String id, // generated
+        String id,
         String body,
         Doc doc) {
+
+    public static String genChunkUuid(){
+        UUID uuid = UUID.randomUUID();
+        return uuid.toString();
+    }
+
+    public WeaviateObject toWeaviateObject() {
+        Map<String, Object> properties = new LinkedHashMap<>();
+        properties.put("body", body);
+        properties.put("docId", doc.id());
+        properties.put("docTitle", doc.title());
+        properties.put("docProject", doc.project());
+        properties.put("docUrl", doc.url());
+//        properties.put("docWriters", doc.writers());
+//        properties.put("docCreateTime", doc.createdTime().toString());
+//        properties.put("docLastModifiedTime", doc.lastModifiedTime().toString());
+
+        return WeaviateObject.builder()
+                .className("Chunk")
+                .id(id)
+                .properties(properties)
+                .build();
+    }
+
 
     public static WeaviateClass makeSchema() {
         Property bodyProperty = Property.builder()
@@ -58,33 +82,33 @@ public record Chunk(
                 .moduleConfig(Map.of("text2vec-ollama", Map.of("skip", true)))
                 .build();
 
-        Property docWritersProperty = Property.builder()
-                .name("docWriters")
-                .description("writers of doc")
-                .dataType(List.of(DataType.TEXT_ARRAY))
-                .indexFilterable(true)
-                .indexSearchable(false)
-                .moduleConfig(Map.of("text2vec-ollama", Map.of("skip", true)))
-                .build();
-
-        Property docCreateTimeProperty = Property.builder()
-                .name("docCreateTime")
-                .description("create time of doc")
-                .dataType(List.of(DataType.DATE))
-                .indexFilterable(false)
-                .indexSearchable(false)
-                .indexRangeFilters(true)
-                .build();
-
-
-        Property docLastModifiedTimeProperty = Property.builder()
-                .name("docLastModifiedTime")
-                .description("last modified time of doc")
-                .dataType(List.of(DataType.DATE))
-                .indexFilterable(false)
-                .indexSearchable(false)
-                .indexRangeFilters(true)
-                .build();
+//        Property docWritersProperty = Property.builder()
+//                .name("docWriters")
+//                .description("writers of doc")
+//                .dataType(List.of(DataType.TEXT_ARRAY))
+//                .indexFilterable(true)
+//                .indexSearchable(false)
+//                .moduleConfig(Map.of("text2vec-ollama", Map.of("skip", true)))
+//                .build();
+//
+//        Property docCreateTimeProperty = Property.builder()
+//                .name("docCreateTime")
+//                .description("create time of doc")
+//                .dataType(List.of(DataType.DATE))
+//                .indexFilterable(false)
+//                .indexSearchable(false)
+//                .indexRangeFilters(true)
+//                .build();
+//
+//
+//        Property docLastModifiedTimeProperty = Property.builder()
+//                .name("docLastModifiedTime")
+//                .description("last modified time of doc")
+//                .dataType(List.of(DataType.DATE))
+//                .indexFilterable(false)
+//                .indexSearchable(false)
+//                .indexRangeFilters(true)
+//                .build();
 
         Object tokenizeCfg = Map.of("text2vec-transformers", Map.of(
                 "tokenization", "gse",
@@ -94,7 +118,9 @@ public record Chunk(
                         "stopPreset", "cn")));
                             // "userDictPath", "/dict/game_terms.txt"
 
-        Object ollamaCfg = Map.of("apiEndpoint", "http://localhost:11434",
+//        String apiEndpoint = "http://localhost:11434";
+        String apiEndpoint = "http://host.docker.internal:11434";
+        Object ollamaCfg = Map.of("apiEndpoint", apiEndpoint,
                 "model", "dengcao/Qwen3-Embedding-0.6B:F16");
 
         Object moduleCfg = Map.of("text2vec-transformers", tokenizeCfg,
@@ -121,15 +147,17 @@ public record Chunk(
                         docIdProperty,
                         docTitleProperty,
                         docProjectProperty,
-                        docUrlProperty,
-                        docWritersProperty,
-                        docCreateTimeProperty,
-                        docLastModifiedTimeProperty))
+                        docUrlProperty
+//                        docWritersProperty,
+//                        docCreateTimeProperty,
+//                        docLastModifiedTimeProperty
+                ))
                 .invertedIndexConfig(invertedIndexConfig)
                 .vectorizer("text2vec-ollama") // 但实际不生成类向量
                 .moduleConfig(moduleCfg)
                 .build();
     }
+
 
 
 }

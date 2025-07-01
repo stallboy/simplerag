@@ -1,4 +1,4 @@
-package simplerag.importer;
+package simplerag.data;
 
 import org.commonmark.node.Document;
 import org.commonmark.node.Node;
@@ -86,17 +86,5 @@ public class Segment {
             segment.estimateTokenNum(counter);
         }
     }
-
-    public static String toMarkdownStr(List<Segment> segments) {
-        List<String> result = new ArrayList<>();
-        for (Segment segment : segments) {
-            String str = segment.toMarkdownStr();
-            if (!str.isBlank()) {
-                result.add(str);
-            }
-        }
-        return String.join("\n", result);
-    }
-
 
 }

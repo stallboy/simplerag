@@ -1,4 +1,4 @@
-package simplerag.importer;
+package simplerag.data;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,14 +21,14 @@ public class Splitter {
         this.conf = conf;
     }
 
-    public List<String> splitMarkdown(String markdownText, String title) {
+    public List<SplitChunk> splitMarkdown(String markdownText, String title) {
         List<Segment> segments = parser.removeLinkAndSplitByHeadings(markdownText, title);
         Segment.estimateTokenNum(segments, tokenCounter);
         return splitSegments(segments);
     }
 
 
-    public List<String> splitSegments(List<Segment> segments) {
+    public List<SplitChunk> splitSegments(List<Segment> segments) {
         List<Segment> refined = cutLargeSegments(segments);
 
         int[] tokens = new int[refined.size()];
@@ -39,19 +39,19 @@ public class Splitter {
             levels[i] = seg.getLevel();
             i++;
         }
-        int[] bestSplit = findBestSplit(tokens, levels);
+        int[] bestSplit = findBestSplit(tokens, levels, conf.splitBestMin, conf.splitBestMax);
 
         if (bestSplit == null || bestSplit.length == 0) {
-            return List.of(Segment.toMarkdownStr(segments));
+            return List.of(SplitChunk.of(segments));
         }
 
-        List<String> result = new ArrayList<>(4);
+        List<SplitChunk> result = new ArrayList<>(bestSplit.length + 1);
         int from = 0;
         for (int splitPoint : bestSplit) {
-            result.add(Segment.toMarkdownStr(refined.subList(from, splitPoint)));
+            result.add(SplitChunk.of(refined.subList(from, splitPoint)));
             from = splitPoint;
         }
-        result.add(Segment.toMarkdownStr(refined.subList(from, refined.size())));
+        result.add(SplitChunk.of(refined.subList(from, refined.size())));
         return result;
     }
 
@@ -117,11 +117,11 @@ public class Splitter {
         }
     }
 
-    private int[] findBestSplit(int[] tokens, int[] levels) {
-        int bestNum = (conf.splitBestMin + conf.splitBestMax) / 2;
-        int numSpace = (conf.splitBestMax - conf.splitBestMin) / 2;
+    public static int[] findBestSplit(int[] tokens, int[] levels, int limitMin, int limitMax) {
+        int bestNum = (limitMin + limitMax) / 2;
+        int numSpace = (limitMax - limitMin) / 2;
         if (numSpace == 0) {
-            numSpace = conf.splitBestMin / 2;
+            numSpace = limitMin / 2;
         }
 
         int n = tokens.length;
@@ -171,37 +171,12 @@ public class Splitter {
 
 
     public static void main(String[] args) throws IOException {
-
-
-        int[] tokens = new int[]{100, 100, 200, 100};
-        int[] levels = new int[]{0, 1, 2, 2};
-        {
-            Splitter splitter = new Splitter(TokenCounter.getDeepSeekR10528(), new SplitterConf(
-                    300, 200, 100, 100));
-            int[] bestSplit = splitter.findBestSplit(tokens, levels);
-
-            System.out.println(Arrays.stream(bestSplit).boxed().toList());
-        }
-
-        {
-            Splitter splitter = new Splitter(TokenCounter.getDeepSeekR10528(), new SplitterConf(
-                    300, 200, 200, 300));
-            int[] bestSplit = splitter.findBestSplit(tokens, levels);
-
-            System.out.println(Arrays.stream(bestSplit).boxed().toList());
-        }
-
         Path mdFile = Path.of("doc/dify_svn_woa/dify_svn_woa/2025-05-22_17_14/诛仙/策划文档/7功能设计/【公测版本】坐骑系统.md");
         String md = Files.readString(mdFile);
         Splitter splitter = new Splitter(TokenCounter.getDeepSeekR10528(), new SplitterConf(
                 2000, 1200, 750, 1250));
-        List<String> result = splitter.splitMarkdown(md, "坐骑系统");
-        for (String s : result) {
-            System.out.println("-------".repeat(10));
-            System.out.println(s.length());
-
-            System.out.println(s);
-        }
+        List<SplitChunk> result = splitter.splitMarkdown(md, "坐骑系统");
+        System.out.println(SplitChunk.dump(result));
 
     }
 }

@@ -1,9 +1,7 @@
-package simplerag.importer;
+package simplerag.data;
 
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 public class TokenCounter implements AutoCloseable {
@@ -28,20 +26,6 @@ public class TokenCounter implements AutoCloseable {
     public void close() {
         tokenizer.close();
 
-    }
-
-    public static void main(String[] args) throws IOException {
-        try (TokenCounter tk = getDeepSeekR10528()) {
-            List<String> inputs = List.of(
-                    "你好，世界！",
-                    "Hello world, this is a test for DeepSeek tokenizer.",
-                    "A key feature of DeepSeek-V2 is its adoption of Mixture-of-Experts (MoE) architecture."
-            );
-
-            for (String input : inputs) {
-                System.out.printf("(%5d) : %s:\n", tk.countTokens(input), input);
-            }
-        }
     }
 
 }
