@@ -25,7 +25,6 @@ public class TokenCounter implements AutoCloseable {
     @Override
     public void close() {
         tokenizer.close();
-
     }
 
 }

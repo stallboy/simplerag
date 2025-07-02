@@ -5,6 +5,7 @@ import io.weaviate.client.v1.misc.model.BM25Config;
 import io.weaviate.client.v1.misc.model.InvertedIndexConfig;
 import io.weaviate.client.v1.schema.model.DataType;
 import io.weaviate.client.v1.schema.model.Property;
+import io.weaviate.client.v1.schema.model.Tokenization;
 import io.weaviate.client.v1.schema.model.WeaviateClass;
 import simplerag.data.Doc;
 
@@ -16,7 +17,7 @@ public record Chunk(
         String body,
         Doc doc) {
 
-    public static String genChunkUuid(){
+    public static String genChunkUuid() {
         UUID uuid = UUID.randomUUID();
         return uuid.toString();
     }
@@ -40,13 +41,14 @@ public record Chunk(
     }
 
 
-    public static WeaviateClass makeSchema() {
+    public static WeaviateClass toWeaviateClass() {
         Property bodyProperty = Property.builder()
                 .name("body")
                 .description("chunk body")
                 .dataType(List.of(DataType.TEXT))
                 .indexFilterable(false) // 长文本不要filter
                 .indexSearchable(true)
+                .tokenization("gse")
                 .build();
 
         Property docIdProperty = Property.builder()
@@ -55,6 +57,7 @@ public record Chunk(
                 .dataType(List.of(DataType.TEXT))
                 .indexFilterable(true)
                 .indexSearchable(true)
+                .tokenization("gse")
                 .build();
 
         Property docTitleProperty = Property.builder()
@@ -63,12 +66,14 @@ public record Chunk(
                 .dataType(List.of(DataType.TEXT))
                 .indexFilterable(true)
                 .indexSearchable(true)
+                .tokenization("gse")
                 .build();
 
         Property docProjectProperty = Property.builder()
                 .name("docProject")
                 .description("project of doc")
                 .dataType(List.of(DataType.TEXT))
+                .tokenization(Tokenization.FIELD)
                 .indexFilterable(true)
                 .indexSearchable(false)
                 .build();
@@ -110,31 +115,26 @@ public record Chunk(
 //                .indexRangeFilters(true)
 //                .build();
 
-        Object tokenizeCfg = Map.of("text2vec-transformers", Map.of(
+        Object tokenizeCfg = Map.of(
                 "tokenization", "gse",
                 "skip", true,  // 不生成向量，只用于分词
                 "gseConfig", Map.of(
                         "mode", "accurate",
-                        "stopPreset", "cn")));
-                            // "userDictPath", "/dict/game_terms.txt"
+                        "stopPreset", "cn"));
+        // "userDictPath", "/dict/game_terms.txt"
 
 //        String apiEndpoint = "http://localhost:11434";
         String apiEndpoint = "http://host.docker.internal:11434";
-        Object ollamaCfg = Map.of("apiEndpoint", apiEndpoint,
+        Object ollamaCfg = Map.of(
+                "apiEndpoint", apiEndpoint,
                 "model", "dengcao/Qwen3-Embedding-0.6B:F16");
 
-        Object moduleCfg = Map.of("text2vec-transformers", tokenizeCfg,
+        Object moduleCfg = Map.of(
+                "text2vec-transformers", tokenizeCfg,
                 "text2vec-ollama", ollamaCfg);
 
-        // Configure BM25 settings
-        BM25Config bm25Config = BM25Config.builder()
-                .b(0.7f)
-                .k1(1.25f)
-                .build();
-
-        // Configure inverted index with BM25 and other settings
         InvertedIndexConfig invertedIndexConfig = InvertedIndexConfig.builder()
-                .bm25(bm25Config)
+                .bm25(BM25Config.builder().b(0.7f).k1(1.25f).build())
                 .indexNullState(false)
                 .indexPropertyLength(false)
                 .indexTimestamps(false)
@@ -153,11 +153,10 @@ public record Chunk(
 //                        docLastModifiedTimeProperty
                 ))
                 .invertedIndexConfig(invertedIndexConfig)
-                .vectorizer("text2vec-ollama") // 但实际不生成类向量
+                .vectorizer("text2vec-ollama")
                 .moduleConfig(moduleCfg)
                 .build();
     }
-
 
 
 }

@@ -6,6 +6,8 @@ import io.weaviate.client.base.Result;
 import io.weaviate.client.v1.batch.api.ObjectsBatcher;
 import io.weaviate.client.v1.batch.model.ObjectGetResponse;
 import io.weaviate.client.v1.schema.model.WeaviateClass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import simplerag.data.Doc;
 import simplerag.data.SplitChunk;
 import simplerag.data.Splitter;
@@ -19,6 +21,7 @@ import java.util.List;
 
 public class ChunkService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ChunkService.class.getName());
     private final WeaviateClient client;
 
     public ChunkService() {
@@ -28,12 +31,15 @@ public class ChunkService {
         Result<Boolean> chunkClassExistsRes = client.schema().exists().withClassName("Chunk").run();
         if (!chunkClassExistsRes.getResult()) {
 
-            WeaviateClass chunkClass = Chunk.makeSchema();
+            WeaviateClass chunkClass = Chunk.toWeaviateClass();
             Result<Boolean> run = client.schema().classCreator().withClass(chunkClass).run();
+            if (run.hasErrors()) {
+                logger.error("create Chunk class failed: {}", run.getError());
+            }
             if (!run.getResult()) {
                 throw new RuntimeException("create Chunk class failed");
             }
-            System.out.println("create Chunk class ok");
+            logger.info("create Chunk class ok");
         }
     }
 
@@ -47,20 +53,29 @@ public class ChunkService {
             }
             Result<ObjectGetResponse[]> result = batcher.run();
             if (result.hasErrors()) {
-                System.out.println(result.getError());
+                logger.error("import {} failed: {}", doc.id(), result.getError());
             }
             ObjectGetResponse[] res = result.getResult();
-            if (res == null || res.length == 0) {
-                System.out.println("import chunk failed");
-            }else{
-                System.out.println("import chunk ok, size: " + res.length);
+            if (res != null && res.length > 0) {
+                logger.info("import {} ok, size: {}", doc.id(), res.length);
             }
         }
     }
 
-    public static void main(String[] args) throws IOException {
-        System.out.println(Chunk.genChunkUuid());
 
+    public void updateChunkClass() {
+        WeaviateClass chunkClass = Chunk.toWeaviateClass();
+        Result<Boolean> run = client.schema().classUpdater().withClass(chunkClass).run();
+        if (run.hasErrors()) {
+            logger.error("update Chunk class failed: {}", run.getError());
+        }
+        if (!run.getResult()) {
+            throw new RuntimeException("update Chunk class failed");
+        }
+        logger.info("update Chunk class ok");
+    }
+
+    private static void testOneFile() throws IOException {
         Path mdFile = Path.of("doc/dify_svn_woa/dify_svn_woa/2025-05-22_17_14/诛仙/策划文档/7功能设计/【公测版本】坐骑系统.md");
         String md = Files.readString(mdFile);
         Splitter splitter = new Splitter(TokenCounter.getDeepSeekR10528(), new Splitter.SplitterConf(
@@ -80,7 +95,6 @@ public class ChunkService {
 
         ChunkService chunkService = new ChunkService();
         chunkService.importChunk(chunks, doc);
-
     }
 
 
