@@ -80,6 +80,29 @@ public class Importer {
     }
 
 
+    private static void testOneFile() throws IOException {
+        Path mdFile = Path.of("doc/dify_svn_woa/dify_svn_woa/2025-05-22_17_14/诛仙/策划文档/7功能设计/【公测版本】坐骑系统.md");
+        String md = Files.readString(mdFile);
+        Splitter splitter = new Splitter(TokenCounter.getDeepSeekR10528(), new Splitter.SplitterConf(
+                2000, 1200, 750, 1250));
+        List<SplitChunk> chunks = splitter.splitMarkdown(md, "坐骑系统");
+
+
+        System.out.println(chunks.size());
+        Doc doc = new Doc("svn/诛仙/策划文档/7功能设计/【公测版本】坐骑系统.md",
+                "【公测版本】坐骑系统",
+                md,
+                "诛仙",
+                "http://helloworld.com/123",
+                List.of("xxx"),
+                LocalDateTime.now(),
+                LocalDateTime.now());
+
+        ChunkService chunkService = new ChunkService();
+        chunkService.importChunk(chunks, doc);
+    }
+
+
     public static void main(String[] args) throws IOException {
         Map<String, String> idToProject = Map.of(
                 "gmpwrd", "完美横版",

@@ -44,6 +44,7 @@ dependencies {
     implementation 'io.github.cdimascio:dotenv-java:3.2.0'
 
     implementation 'org.slf4j:slf4j-simple:2.0.9'
+    implementation 'com.alibaba.fastjson2:fastjson2:2.0.57'
 
 }
 
