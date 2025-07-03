@@ -22,7 +22,7 @@ public record Chunk(
         return uuid.toString();
     }
 
-    public WeaviateObject toWeaviateObject() {
+    public WeaviateObject toWeaviateObject(String className) {
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put("body", body);
         properties.put("docId", doc.id());
@@ -34,14 +34,14 @@ public record Chunk(
 //        properties.put("docLastModifiedTime", doc.lastModifiedTime().toString());
 
         return WeaviateObject.builder()
-                .className("Chunk")
+                .className(className)
                 .id(id)
                 .properties(properties)
                 .build();
     }
 
 
-    public static WeaviateClass toWeaviateClass() {
+    public static WeaviateClass toWeaviateClass(String className, Object ollamaCfg) {
         Property bodyProperty = Property.builder()
                 .name("body")
                 .description("chunk body")
@@ -121,13 +121,7 @@ public record Chunk(
                 "gseConfig", Map.of(
                         "mode", "accurate",
                         "stopPreset", "cn"));
-        // "userDictPath", "/dict/game_terms.txt"
-
-//        String apiEndpoint = "http://localhost:11434";
-        String apiEndpoint = "http://host.docker.internal:11434";
-        Object ollamaCfg = Map.of(
-                "apiEndpoint", apiEndpoint,
-                "model", "dengcao/Qwen3-Embedding-0.6B:F16");
+                        // "userDictPath", "/dict/game_terms.txt"
 
         Object moduleCfg = Map.of(
                 "text2vec-transformers", tokenizeCfg,
@@ -141,7 +135,7 @@ public record Chunk(
                 .build();
 
         return WeaviateClass.builder()
-                .className("Chunk")
+                .className(className)
                 .description("document chunk")
                 .properties(List.of(bodyProperty,
                         docIdProperty,

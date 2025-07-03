@@ -1,5 +1,7 @@
 package simplerag.serve;
 
+import io.weaviate.client.Config;
+import io.weaviate.client.WeaviateClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import simplerag.data.Doc;
@@ -103,7 +105,7 @@ public class Importer {
     }
 
 
-    public static void main(String[] args) throws IOException {
+    public static void importFolder(ChunkService chunkService) throws IOException {
         Map<String, String> idToProject = Map.of(
                 "gmpwrd", "完美横版",
                 "gmpwrd1", "完美S",
@@ -123,7 +125,6 @@ public class Importer {
         TokenCounter tokenCounter = TokenCounter.getDeepSeekR10528();
         Splitter.SplitterConf splitterConf = new Splitter.SplitterConf(
                 2000, 1200, 750, 1250);
-        ChunkService chunkService = new ChunkService();
 
         try (ExecutorService executor = Executors.newWorkStealingPool()) {
             for (DocPath dp : result.values()) {
@@ -143,12 +144,27 @@ public class Importer {
                             LocalDateTime.now());
 
                     chunkService.importChunk(chunks, doc);
-
                 });
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void importFolderUse4B() throws IOException {
+        ChunkService chunkService = new ChunkService(new WeaviateClient(new Config("http", "localhost:8080")),
+                "Chunk4B",
+                Map.of("apiEndpoint", "http://10.5.9.169:11434",
+                        "model", "Qwen3-Embedding-4B"));
+
+        importFolder(chunkService);
+        logger.info("end {}", LocalDateTime.now());
+    }
+
+    public static void main(String[] args) throws IOException {
+//        importFolderUse4B();
+
+        logger.info("hello {}", LocalDateTime.now());
 
     }
 }

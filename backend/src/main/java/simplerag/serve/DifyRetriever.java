@@ -9,12 +9,15 @@ import io.javalin.config.Key;
 import io.javalin.http.ContentType;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import io.weaviate.client.Config;
+import io.weaviate.client.WeaviateClient;
 import org.jetbrains.annotations.NotNull;
 import simplerag.service.ChunkService;
 import simplerag.utils.StringOrListDeserializer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static simplerag.service.ChunkService.*;
 
@@ -37,14 +40,14 @@ public class DifyRetriever implements Handler {
 
     public record RetrieveMetaDataCondition(
             @JSONField(defaultValue = "and")
-            LogicalOperator logical_operator, // json可没有，默认为and
+            String logical_operator, // json可没有，默认为and
             List<Condition> conditions) {
     }
 
     public record Condition(
             @JSONField(deserializeUsing = StringOrListDeserializer.class)
             List<String> name,
-            ComparisonOperator comparison_operator,
+            String comparison_operator,
             String value /*json可没有，empty, not empty, null, or not null */) {
     }
 
@@ -121,33 +124,59 @@ public class DifyRetriever implements Handler {
         RetrieveRequest req = JSON.parseObject(body, RetrieveRequest.class);
 
         ChunkService chunkService = ctx.appData(CHUNK_SERVICE_KEY);
-        List<RetrievedChunk> result = chunkService.retrieve(req.query);
-        List<RetrieveRecord> records = new ArrayList<>(result.size());
-        for (RetrievedChunk chunk : result) {
-            RetrieveRecord record = new RetrieveRecord(
-                    chunk.content(),
-                    chunk.score(),
-                    chunk.title(),
-                    null);
-            records.add(record);
-        }
+        List<RetrieveChunk> result = chunkService.retrieve(req.query);
+        List<RetrieveRecord> records = getRetrieveRecords(result);
         String jsonString = JSON.toJSONString(new RetrieveResponse(records));
         ctx.contentType(ContentType.JSON).result(jsonString);
+    }
+
+    @NotNull
+    private static List<RetrieveRecord> getRetrieveRecords(List<RetrieveChunk> result) {
+        List<RetrieveRecord> records = new ArrayList<>(result.size());
+        for (RetrieveChunk chunk : result) {
+            RetrieveRecord record = new RetrieveRecord(
+                    chunk.body,
+                    chunk.getAdditional().getDistance() != null ? chunk.getAdditional().getDistance() : 0f,
+                    chunk.docTitle,
+                    new JSONObject(Map.of("docId", chunk.docId,
+                            "docProject", chunk.docProject,
+                            "docUrl", chunk.docUrl)));
+            records.add(record);
+        }
+        return records;
     }
 
     public static final Key<ChunkService> CHUNK_SERVICE_KEY = new Key<>("ChunkService");
 
     private static void initConfig(JavalinConfig config) {
-        config.appData(CHUNK_SERVICE_KEY, new ChunkService());
+//        config.appData(CHUNK_SERVICE_KEY, new ChunkService());
+
+        ChunkService chunkService = new ChunkService(new WeaviateClient(new Config("http", "localhost:8080")),
+                "Chunk4B",
+                Map.of("apiEndpoint", "http://10.5.9.169:11434",
+                        "model", "Qwen3-Embedding-4B"));
+        config.appData(CHUNK_SERVICE_KEY, chunkService);
     }
 
-    public static void main(String[] args) {
+    public static void runApp() {
         var app = Javalin.create(DifyRetriever::initConfig)
                 .get("/", ctx -> ctx.result("Hello World"))
                 .post("/retrieval", new DifyRetriever());
 
-        app.start();
+        app.start("0.0.0.0", 7000);
     }
 
+    public static void main(String[] args) {
+        ChunkService chunkService = new ChunkService(new WeaviateClient(new Config("http", "localhost:8080")),
+                "Chunk4B",
+                Map.of("apiEndpoint", "http://10.5.9.169:11434",
+                        "model", "Qwen3-Embedding-4B"));
+        List<RetrieveChunk> result = chunkService.retrieve("竖屏横屏切换");
+        System.out.println("query result size: " + result.size());
+        for (RetrieveChunk c : result) {
+            System.out.printf("----- %s  %s -----\n", c.docProject, c.docTitle);
+            System.out.println(c.body);
+        }
+    }
 
 }

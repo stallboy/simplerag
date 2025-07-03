@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+
+    <!-- Appenders -->
+    <Appenders>
+        <!-- 控制台输出 -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{ISO8601} [%t] %-5level %c{1}: %msg%n"/>
+        </Console>
+
+        <!-- 文件滚动日志 -->
+        <RollingRandomAccessFile name="File"
+                                 fileName="logs/app.log"
+                                 filePattern="logs/app-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="%d %-5p %c{1.}: %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingRandomAccessFile>
+
+        <!-- 异步日志提升性能 -->
+        <Async name="AsyncFile" bufferSize="1024">
+            <AppenderRef ref="File"/>
+        </Async>
+    </Appenders>
+
+    <!-- 日志级别配置 -->
+    <Loggers>
+        <!-- Root 日志器 -->
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AsyncFile"/>
+        </Root>
+
+        <!-- 包级别细粒度控制 -->
+        <Logger name="simplerag" level="info" additivity="true">
+        </Logger>
+
+        <!-- 抑制第三方库日志 -->
+        <Logger name="org.hibernate" level="warn" additivity="false"/>
+    </Loggers>
+</Configuration>

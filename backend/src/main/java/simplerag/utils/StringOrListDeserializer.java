@@ -16,7 +16,7 @@ public class StringOrListDeserializer implements ObjectReader<List<String>> {
             //noinspection unchecked
             return jsonReader.readArray(String.class);
         }
-        throw new JSONException("Invalid tags format");
+        throw new JSONException("Invalid " + fieldName + " format");
     }
 
 }
