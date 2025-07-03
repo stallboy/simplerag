@@ -31,6 +31,9 @@ dependencies {
     // https://mvnrepository.com/artifact/dev.langchain4j/langchain4j-community-neo4j-retriever
     implementation 'dev.langchain4j:langchain4j-community-neo4j-retriever:1.1.0-beta7'
 
+
+
+
     // https://javalin.io/documentation#getting-started
     implementation("io.javalin:javalin:6.7.0")
 

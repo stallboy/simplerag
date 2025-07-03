@@ -162,9 +162,6 @@ public class Importer {
     }
 
     public static void main(String[] args) throws IOException {
-//        importFolderUse4B();
-
-        logger.info("hello {}", LocalDateTime.now());
-
+        importFolderUse4B();
     }
 }

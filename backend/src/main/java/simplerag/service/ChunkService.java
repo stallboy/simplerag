@@ -6,13 +6,18 @@ import io.weaviate.client.WeaviateClient;
 import io.weaviate.client.base.Result;
 import io.weaviate.client.v1.batch.api.ObjectsBatcher;
 import io.weaviate.client.v1.batch.model.ObjectGetResponse;
+import io.weaviate.client.v1.experimental.Where;
+import io.weaviate.client.v1.filters.WhereFilter;
 import io.weaviate.client.v1.graphql.model.GraphQLGetBaseObject;
 import io.weaviate.client.v1.graphql.model.GraphQLTypedResponse;
+import io.weaviate.client.v1.graphql.query.Get;
 import io.weaviate.client.v1.graphql.query.argument.HybridArgument;
 import io.weaviate.client.v1.graphql.query.argument.NearTextArgument;
+import io.weaviate.client.v1.graphql.query.argument.WhereArgument;
 import io.weaviate.client.v1.graphql.query.fields.Field;
 import io.weaviate.client.v1.schema.model.WeaviateClass;
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import simplerag.data.Doc;
@@ -27,6 +32,13 @@ public class ChunkService {
     private final WeaviateClient client;
     private final String className;
     private final Object ollamaCfg;
+
+    public ChunkService() {
+        this(new WeaviateClient(new Config("http", "localhost:8080")),
+                "Chunk",
+                Map.of("apiEndpoint", "http://host.docker.internal:11434",
+                        "model", "dengcao/Qwen3-Embedding-0.6B:F16"));
+    }
 
     public ChunkService(WeaviateClient client, String className, Object ollamaCfg) {
         this.client = client;
@@ -46,14 +58,6 @@ public class ChunkService {
             logger.info("create {} class ok", className);
         }
     }
-
-    public ChunkService() {
-        this(new WeaviateClient(new Config("http", "localhost:8080")),
-                "Chunk",
-                Map.of("apiEndpoint", "http://host.docker.internal:11434",
-                        "model", "dengcao/Qwen3-Embedding-0.6B:F16"));
-    }
-
 
     public void importChunk(List<SplitChunk> chunks, Doc doc) {
         try (ObjectsBatcher batcher = client.batch().objectsBatcher()) {
@@ -89,26 +93,10 @@ public class ChunkService {
             "Instruct: Given a Chinese search query, retrieve relevant passages that answer the question. Query: ";
 
 
-
-    public List<RetrieveChunk> retrieve(String query) {
-//        Fields fields = Fields.builder()
-//                .fields(
-//                        Field.builder().name("body").build(),
-//                        Field.builder().name("docId").build(),
-//                        Field.builder().name("docProject").build(),
-//                        Field.builder().name("docTitle").build(),
-//                        Field.builder().name("docUrl").build(),
-//                        Field.builder().name("_additional").fields(new Field[]{
-//                                Field.builder().name("id").build(),
-//                                Field.builder().name("distance").build()
-//                        }).build()
-//                )
-//                .build();
-
+    public List<RetrieveChunk> retrieve(@NotNull String query, String projectName) {
         NearTextArgument nearText = NearTextArgument.builder()
                 .concepts(new String[]{Qwen3EmbeddingQuestionInstruct + query})
                 .build();
-
 
         HybridArgument.Searches searches = HybridArgument.Searches.builder()
                 .nearText(nearText)
@@ -120,17 +108,7 @@ public class ChunkService {
                 .alpha(0.75f) // 默认就是0.75，含义是nearText占0.75
                 .build();
 
-//        String graphQuery = GetBuilder.builder()
-//                .className(className)
-//                .fields(fields)
-//                .withHybridFilter(hybridArgument)
-//                .autocut(2)
-////                .limit(10)
-//                .build()
-//                .buildQuery();
-
-
-        Result<GraphQLTypedResponse<RetrieveResult>> run = client.graphQL().get()
+        Get get = client.graphQL().get()
                 .withClassName(className)
                 .withFields(Field.builder().name("body").build(),
                         Field.builder().name("docId").build(),
@@ -142,8 +120,20 @@ public class ChunkService {
                                 Field.builder().name("distance").build()
                         }).build())
                 .withHybrid(hybridArgument)
-                .withAutocut(2)
-                .run(RetrieveResult.class);
+                .withAutocut(2);
+
+        if (projectName != null) {
+            WhereArgument whereArgument = WhereArgument.builder()
+                    .filter(WhereFilter.builder()
+                            .operator(Where.Operator.EQUAL.toString())
+                            .path("docProject")
+                            .valueText(projectName)
+                            .build())
+                    .build();
+            get.withWhere(whereArgument);
+        }
+
+        Result<GraphQLTypedResponse<RetrieveResult>> run = get.run(RetrieveResult.class);
         if (run.hasErrors()) {
             logger.error("query {} failed: {}", query, run.getError());
         }
@@ -151,7 +141,7 @@ public class ChunkService {
         List<RetrieveChunk> result = run.getResult().getData().getObjects().chunks;
         if (result != null) {
             return result;
-        }else{
+        } else {
             logger.error("query {} result is null", query);
         }
 
@@ -168,7 +158,7 @@ public class ChunkService {
     }
 
     @Getter
-    public static class RetrieveResult{
+    public static class RetrieveResult {
         @SerializedName(value = "Chunk4B")
         List<RetrieveChunk> chunks;
     }

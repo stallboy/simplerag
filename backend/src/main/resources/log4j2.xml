@@ -39,6 +39,6 @@
         </Logger>
 
         <!-- 抑制第三方库日志 -->
-        <Logger name="org.hibernate" level="warn" additivity="false"/>
+<!--        <Logger name="org.hibernate" level="warn" additivity="false"/>-->
     </Loggers>
 </Configuration>

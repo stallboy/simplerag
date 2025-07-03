@@ -12,6 +12,8 @@ import io.javalin.http.Handler;
 import io.weaviate.client.Config;
 import io.weaviate.client.WeaviateClient;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import simplerag.service.ChunkService;
 import simplerag.utils.StringOrListDeserializer;
 
@@ -25,6 +27,8 @@ import static simplerag.service.ChunkService.*;
  *  <a href="https://docs.dify.ai/en/guides/knowledge-base/external-knowledge-api">接口说明</a>
  */
 public class DifyRetriever implements Handler {
+
+    private static final Logger logger = LoggerFactory.getLogger(DifyRetriever.class.getName());
 
     public record RetrieveRequest(
             String knowledge_id,
@@ -119,12 +123,22 @@ public class DifyRetriever implements Handler {
     }
 
     @Override
-    public void handle(@NotNull Context ctx) throws Exception {
+    public void handle(@NotNull Context ctx) {
         String body = ctx.body();
         RetrieveRequest req = JSON.parseObject(body, RetrieveRequest.class);
+        String projectName = null;
+        RetrieveMetaDataCondition meta = req.metadata_condition;
+        if (meta != null && !meta.conditions.isEmpty()) {
+            Condition first = meta.conditions.getFirst();
+            if (!first.name.isEmpty() && first.name.getFirst().equals("project_name")) {
+                projectName = first.value;
+            }
+        }
+
+        logger.info("retrieve query: {}, project: {}", req.query, projectName);
 
         ChunkService chunkService = ctx.appData(CHUNK_SERVICE_KEY);
-        List<RetrieveChunk> result = chunkService.retrieve(req.query);
+        List<RetrieveChunk> result = chunkService.retrieve(req.query, projectName);
         List<RetrieveRecord> records = getRetrieveRecords(result);
         String jsonString = JSON.toJSONString(new RetrieveResponse(records));
         ctx.contentType(ContentType.JSON).result(jsonString);
@@ -171,7 +185,7 @@ public class DifyRetriever implements Handler {
                 "Chunk4B",
                 Map.of("apiEndpoint", "http://10.5.9.169:11434",
                         "model", "Qwen3-Embedding-4B"));
-        List<RetrieveChunk> result = chunkService.retrieve("竖屏横屏切换");
+        List<RetrieveChunk> result = chunkService.retrieve("竖屏横屏切换", null);
         System.out.println("query result size: " + result.size());
         for (RetrieveChunk c : result) {
             System.out.printf("----- %s  %s -----\n", c.docProject, c.docTitle);
