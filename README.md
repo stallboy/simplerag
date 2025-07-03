@@ -13,17 +13,14 @@ curl http://localhost:11434/api/embed -d '{
 }'
 ```
 
+## 搭建weaviate
 
-## HuggingFaceTokenizer.newInstance无法下载
-
-java版本下载会失败，使用
 ```bash
-python -c "from transformers import AutoTokenizer; AutoTokenizer.from_pretrained('deepseek-ai/DeepSeek-R1-0528')"
+cd dev/weaviate
+docker compose up -d
 ```
-下载成功
 
-
-## 观察weaviate
+### 观察weaviate
 
 使用httpie 这种restful api的客户端，配合
 https://weaviate.io/developers/weaviate/api/rest
@@ -68,8 +65,7 @@ localhost:8080/v1/graphql
   Get {
     Chunk (
       bm25: {
-        query: "张震",
-        properties: ["body"]
+        query: "竖版横版切换"
       }){
       body
       _additional {
@@ -86,7 +82,7 @@ localhost:8080/v1/graphql
   Get {
     Chunk (
        nearText: {
-        concepts: ["坐骑有效期规则是什么"],
+        concepts: ["竖版横版切换"],
        }){
       body
       _additional {
@@ -96,3 +92,13 @@ localhost:8080/v1/graphql
   }
 }
 ```
+
+
+
+## HuggingFaceTokenizer.newInstance无法下载
+
+java版本下载会失败，使用
+```bash
+python -c "from transformers import AutoTokenizer; AutoTokenizer.from_pretrained('deepseek-ai/DeepSeek-R1-0528')"
+```
+下载成功

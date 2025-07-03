@@ -6,3 +6,4 @@ build
 /backend/out
 /.idea
 /backend/logs
+/logs/app.log
