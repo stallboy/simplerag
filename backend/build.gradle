@@ -14,9 +14,6 @@ dependencies {
 
     implementation 'dev.langchain4j:langchain4j-open-ai:1.0.1'
     implementation 'dev.langchain4j:langchain4j:1.0.1'
-    // https://mvnrepository.com/artifact/io.weaviate/client
-    implementation 'io.weaviate:client:5.2.1'
-    implementation 'org.json:json:20250517'
 
     // https://mvnrepository.com/artifact/org.neo4j.driver/neo4j-java-driver
     // https://neo4j.com/docs/java-manual/current/
@@ -37,6 +34,8 @@ dependencies {
     // https://javalin.io/documentation#getting-started
     implementation("io.javalin:javalin:6.7.0")
 
+    // https://mvnrepository.com/artifact/io.weaviate/client
+    implementation 'io.weaviate:client:5.2.1'
 
     // https://mvnrepository.com/artifact/org.commonmark/commonmark
     implementation 'org.commonmark:commonmark:0.25.0'

@@ -1,6 +1,7 @@
 package simplerag.service;
 
-import com.google.gson.annotations.SerializedName;
+import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 import io.weaviate.client.Config;
 import io.weaviate.client.WeaviateClient;
 import io.weaviate.client.base.Result;
@@ -16,7 +17,6 @@ import io.weaviate.client.v1.graphql.query.argument.NearTextArgument;
 import io.weaviate.client.v1.graphql.query.argument.WhereArgument;
 import io.weaviate.client.v1.graphql.query.fields.Field;
 import io.weaviate.client.v1.schema.model.WeaviateClass;
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,22 +133,35 @@ public class ChunkService {
             get.withWhere(whereArgument);
         }
 
-        Result<GraphQLTypedResponse<RetrieveResult>> run = get.run(RetrieveResult.class);
+        Result<GraphQLTypedResponse<JsonObject>> run = get.run(JsonObject.class);
         if (run.hasErrors()) {
             logger.error("query {} failed: {}", query, run.getError());
         }
 
-        List<RetrieveChunk> result = run.getResult().getData().getObjects().chunks;
+        List<RetrieveChunk> result = null;
+        JsonObject wrapper = run.getResult().getData().getObjects();
+        if (wrapper != null) {
+            try {
+                JsonArray chunkArray = wrapper.getAsJsonArray(className);
+                if (chunkArray != null && !chunkArray.isEmpty()) {
+                    Gson gson = new Gson();
+                    TypeToken<List<RetrieveChunk>> token = new TypeToken<>() {
+                    };
+                    result = gson.fromJson(chunkArray, token);
+                }
+            } catch (JsonSyntaxException e) {
+                logger.error("failed to convert JSON to chunks", e);
+            }
+        }
+
         if (result != null) {
             return result;
         } else {
             logger.error("query {} result is null", query);
+            return List.of();
         }
-
-        return List.of();
     }
 
-    @Getter
     public static class RetrieveChunk extends GraphQLGetBaseObject {
         public String body;
         public String docId;
@@ -156,12 +169,5 @@ public class ChunkService {
         public String docTitle;
         public String docUrl;
     }
-
-    @Getter
-    public static class RetrieveResult {
-        @SerializedName(value = "Chunk4B")
-        List<RetrieveChunk> chunks;
-    }
-
 
 }

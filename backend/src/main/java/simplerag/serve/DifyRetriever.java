@@ -135,7 +135,7 @@ public class DifyRetriever implements Handler {
             }
         }
 
-        logger.info("retrieve query: {}, project: {}", req.query, projectName);
+        logger.info("retrieve query: {}, project: {}", req.query.replace("\n", "\\n"), projectName);
 
         ChunkService chunkService = ctx.appData(CHUNK_SERVICE_KEY);
         List<RetrieveChunk> result = chunkService.retrieve(req.query, projectName);
