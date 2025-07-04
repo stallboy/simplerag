@@ -7,3 +7,4 @@ build
 /.idea
 /backend/logs
 /logs/app.log
+img

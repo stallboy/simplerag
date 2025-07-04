@@ -41,7 +41,7 @@ class SplitterTest {
                 请在build.gradle中添加依赖。
                 
                 """;
-        List<Splitter.SplitterChunk> chunks = splitter.splitMarkdown(MarkdownParserTest.markdown, "commonmark");
+        List<Splitter.SplitterChunk> chunks = splitter.splitMarkdown(SegmentSplitterTest.markdown, "commonmark");
         assertEquals(result, Splitter.SplitterChunk.dump(chunks));
     }
 
@@ -78,7 +78,7 @@ class SplitterTest {
                 请在build.gradle中添加依赖。
                 
                 """;
-        List<Splitter.SplitterChunk> chunks = splitter.splitMarkdown(MarkdownParserTest.markdown, "commonmark");
+        List<Splitter.SplitterChunk> chunks = splitter.splitMarkdown(SegmentSplitterTest.markdown, "commonmark");
         // System.out.println(SplitChunk.dump(chunks));
         assertEquals(result, Splitter.SplitterChunk.dump(chunks));
     }

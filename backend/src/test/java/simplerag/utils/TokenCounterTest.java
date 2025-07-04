@@ -1,9 +1,8 @@
-package simplerag.data;
+package simplerag.utils;
 
 import org.junit.jupiter.api.Test;
-import simplerag.utils.TokenCounter;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TokenCounterTest {
 
