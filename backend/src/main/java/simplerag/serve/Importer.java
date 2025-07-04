@@ -5,9 +5,8 @@ import io.weaviate.client.WeaviateClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import simplerag.data.Doc;
-import simplerag.data.SplitChunk;
 import simplerag.data.Splitter;
-import simplerag.data.TokenCounter;
+import simplerag.utils.TokenCounter;
 import simplerag.service.ChunkService;
 
 import java.io.IOException;
@@ -87,7 +86,7 @@ public class Importer {
         String md = Files.readString(mdFile);
         Splitter splitter = new Splitter(TokenCounter.getDeepSeekR10528(), new Splitter.SplitterConf(
                 2000, 1200, 750, 1250));
-        List<SplitChunk> chunks = splitter.splitMarkdown(md, "坐骑系统");
+        List<Splitter.SplitterChunk> chunks = splitter.splitMarkdown(md, "坐骑系统");
 
 
         System.out.println(chunks.size());
@@ -137,7 +136,7 @@ public class Importer {
                         return;
                     }
                     Splitter splitter = new Splitter(tokenCounter, splitterConf);
-                    List<SplitChunk> chunks = splitter.splitMarkdown(md, dp.title);
+                    List<Splitter.SplitterChunk> chunks = splitter.splitMarkdown(md, dp.title);
                     Doc doc = new Doc(dp.docId, dp.title, md, dp.project, dp.url,
                             List.of("xxx"),
                             LocalDateTime.now(),

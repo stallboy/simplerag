@@ -1,4 +1,4 @@
-package simplerag.data;
+package simplerag.utils;
 
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 

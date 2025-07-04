@@ -1,6 +1,7 @@
 package simplerag.data;
 
 import org.junit.jupiter.api.Test;
+import simplerag.utils.TokenCounter;
 
 import java.util.List;
 
@@ -40,8 +41,8 @@ class SplitterTest {
                 请在build.gradle中添加依赖。
                 
                 """;
-        List<SplitChunk> chunks = splitter.splitMarkdown(MarkdownParserTest.markdown, "commonmark");
-        assertEquals(result, SplitChunk.dump(chunks));
+        List<Splitter.SplitterChunk> chunks = splitter.splitMarkdown(MarkdownParserTest.markdown, "commonmark");
+        assertEquals(result, Splitter.SplitterChunk.dump(chunks));
     }
 
 
@@ -77,9 +78,9 @@ class SplitterTest {
                 请在build.gradle中添加依赖。
                 
                 """;
-        List<SplitChunk> chunks = splitter.splitMarkdown(MarkdownParserTest.markdown, "commonmark");
+        List<Splitter.SplitterChunk> chunks = splitter.splitMarkdown(MarkdownParserTest.markdown, "commonmark");
         // System.out.println(SplitChunk.dump(chunks));
-        assertEquals(result, SplitChunk.dump(chunks));
+        assertEquals(result, Splitter.SplitterChunk.dump(chunks));
     }
 
     @Test

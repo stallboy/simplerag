@@ -1,5 +1,7 @@
 package simplerag.data;
 
+import simplerag.utils.TokenCounter;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,23 +14,52 @@ public class Splitter {
                                int splitBestMax) {
     }
 
+
+    public record SplitterChunk(String markdown,
+                                int token) {
+
+        public static SplitterChunk of(List<Segment> segments) {
+            List<String> result = new ArrayList<>();
+            int token = 0;
+            for (Segment segment : segments) {
+                String str = segment.toMarkdownStr();
+                if (!str.isBlank()) {
+                    result.add(str);
+                }
+                token += segment.getTokenNum();
+            }
+            String md = String.join("", result);
+            return new SplitterChunk(md, token);
+        }
+
+        public static String dump(List<SplitterChunk> chunks) {
+            StringBuilder sb = new StringBuilder();
+            for (SplitterChunk chunk : chunks) {
+                sb.append("-----token:").append(chunk.token).append(" (").append(chunk.markdown.length()).append(")-----\n")
+                        .append(chunk.markdown).append("\n");
+            }
+            return sb.toString();
+        }
+    }
+
+
     private final TokenCounter tokenCounter;
     private final SplitterConf conf;
-    private final MarkdownParser parser = new MarkdownParser();
+    private final SegmentSplitter parser = new SegmentSplitter();
 
     public Splitter(TokenCounter tokenCounter, SplitterConf conf) {
         this.tokenCounter = tokenCounter;
         this.conf = conf;
     }
 
-    public List<SplitChunk> splitMarkdown(String markdownText, String title) {
+    public List<SplitterChunk> splitMarkdown(String markdownText, String title) {
         List<Segment> segments = parser.removeLinkAndSplitByHeadings(markdownText, title);
         Segment.estimateTokenNum(segments, tokenCounter);
         return splitSegments(segments);
     }
 
 
-    public List<SplitChunk> splitSegments(List<Segment> segments) {
+    public List<SplitterChunk> splitSegments(List<Segment> segments) {
         List<Segment> refined = cutLargeSegments(segments);
 
         int[] tokens = new int[refined.size()];
@@ -42,16 +73,16 @@ public class Splitter {
         int[] bestSplit = findBestSplit(tokens, levels, conf.splitBestMin, conf.splitBestMax);
 
         if (bestSplit == null || bestSplit.length == 0) {
-            return List.of(SplitChunk.of(segments));
+            return List.of(SplitterChunk.of(segments));
         }
 
-        List<SplitChunk> result = new ArrayList<>(bestSplit.length + 1);
+        List<SplitterChunk> result = new ArrayList<>(bestSplit.length + 1);
         int from = 0;
         for (int splitPoint : bestSplit) {
-            result.add(SplitChunk.of(refined.subList(from, splitPoint)));
+            result.add(SplitterChunk.of(refined.subList(from, splitPoint)));
             from = splitPoint;
         }
-        result.add(SplitChunk.of(refined.subList(from, refined.size())));
+        result.add(SplitterChunk.of(refined.subList(from, refined.size())));
         return result;
     }
 
@@ -175,8 +206,9 @@ public class Splitter {
         String md = Files.readString(mdFile);
         Splitter splitter = new Splitter(TokenCounter.getDeepSeekR10528(), new SplitterConf(
                 2000, 1200, 750, 1250));
-        List<SplitChunk> result = splitter.splitMarkdown(md, "坐骑系统");
-        System.out.println(SplitChunk.dump(result));
+        List<SplitterChunk> result = splitter.splitMarkdown(md, "坐骑系统");
+        System.out.println(SplitterChunk.dump(result));
 
     }
+
 }

@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import simplerag.data.Doc;
-import simplerag.data.SplitChunk;
+import simplerag.data.Splitter;
 
 import java.util.List;
 import java.util.Map;
@@ -59,10 +59,10 @@ public class ChunkService {
         }
     }
 
-    public void importChunk(List<SplitChunk> chunks, Doc doc) {
+    public void importChunk(List<Splitter.SplitterChunk> chunks, Doc doc) {
         try (ObjectsBatcher batcher = client.batch().objectsBatcher()) {
 
-            for (SplitChunk chunk : chunks) {
+            for (Splitter.SplitterChunk chunk : chunks) {
                 batcher.withObject(new Chunk(Chunk.genChunkUuid(), chunk.markdown(), doc).
                         toWeaviateObject(className));
             }

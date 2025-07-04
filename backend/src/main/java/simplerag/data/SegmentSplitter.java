@@ -6,8 +6,10 @@ import org.commonmark.renderer.text.TextContentRenderer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class MarkdownParser {
+public class SegmentSplitter {
 
     private final TextContentRenderer textRenderer = TextContentRenderer.builder().build();
     private final Parser parser = Parser.builder().build();
@@ -43,9 +45,11 @@ public class MarkdownParser {
     }
 
 
+    public static final Pattern IMG_PATTERN = Pattern.compile("!\\[.*]\\(data:image/[^)]+\\)");
+
     public static String removeImageForMarkItDownBug(String markdownText) {
-        String regex = "!\\[.*]\\(data:image/[^)]+\\)";
-        return markdownText.replaceAll(regex, "");
+        Matcher matcher = IMG_PATTERN.matcher(markdownText);
+        return matcher.replaceAll(""); // 移除匹配内容
     }
 
 

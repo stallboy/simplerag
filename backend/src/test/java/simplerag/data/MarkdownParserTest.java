@@ -33,7 +33,7 @@ class MarkdownParserTest {
 
     @Test
     void removeLinkAndSplitByHeadings() {
-        List<Segment> result = new MarkdownParser().removeLinkAndSplitByHeadings(markdown, "title");
+        List<Segment> result = new SegmentSplitter().removeLinkAndSplitByHeadings(markdown, "title");
         assertEquals(6, result.size());
         assertEquals("title", result.getFirst().getHeader());
 
@@ -53,14 +53,14 @@ class MarkdownParserTest {
         {
             String v = """
                     中![C:\\Users\\Administrator\\AppData\\Local\\Microsoft\\Windows\\INetCache\\Content.Word\\20220505165603.png](data:image/png;base64...)国""";
-            String r = MarkdownParser.removeImageForMarkItDownBug(v);
+            String r = SegmentSplitter.removeImageForMarkItDownBug(v);
             assertEquals("中国", r);
         }
 
         {
             String v = """
                     中![C:][]](data:image/png;base64...)国""";
-            String r = MarkdownParser.removeImageForMarkItDownBug(v);
+            String r = SegmentSplitter.removeImageForMarkItDownBug(v);
             assertEquals("中国", r);
         }
 

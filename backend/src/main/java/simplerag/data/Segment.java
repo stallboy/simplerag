@@ -4,6 +4,7 @@ import org.commonmark.node.Document;
 import org.commonmark.node.Node;
 import org.commonmark.renderer.Renderer;
 import org.commonmark.renderer.markdown.MarkdownRenderer;
+import simplerag.utils.TokenCounter;
 
 import java.util.ArrayList;
 import java.util.List;
